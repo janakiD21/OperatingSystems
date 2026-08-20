@@ -1,0 +1,62 @@
+#include<stdio.h>
+#include<unistd.h>
+#include<sys/wait.h>
+#include<sys/types.h>
+
+int sumofoddnum(int num){
+   int sum=0;
+   int i;
+   for( i=1;i<=num;i=i+2){
+      sum=sum+i;
+   }
+   return sum;
+}
+int sumofevennum(int num){
+   int sum1=0;
+   int i;
+   for( i=0;i<=num;i=i+2){
+      sum1=sum1+i;
+   }
+   return sum1;
+}
+int sumofnum(int num){
+   int sum2=0;
+   int i;
+   for(i=0;i<=num;i++){
+      sum2=sum2+i;
+   }
+   return sum2;
+}
+int main(){
+   int num;
+   printf("Enter the num:");
+   scanf("%d",&num);
+   if(num<0)
+   {
+      printf("Enter a valid number!:");
+   }
+   pid_t pid1,pid2;
+   printf("Parent process\n");
+   pid1=fork();
+   if(pid1==0){
+      printf("p2:child of P1\n PID=%d\t ParentID=%d sumof odd numbers:%d\n",getpid(),getppid(),sumofoddnum(num));
+   }
+   else if(pid1<0){
+      printf("P1 failed");
+   }
+   else{
+      wait(NULL);
+      pid2=fork();
+      if(pid2==0){
+	 printf("P3:child of P1\n P3ID=%d \t ParentID=%d\n,sum of even numbers:%d\n",getpid(),getppid(),sumofevennum(num));
+      }
+      else if(pid2<0){
+	 printf("P3 fork failed");
+      }
+      else{
+	 wait(NULL);
+         printf("ParentprocessP1:\nPID=%d\n sum of n numbers:%d",getpid(),sumofnum(num));
+   }
+   return 0;
+   }
+}
