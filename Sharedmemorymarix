@@ -1,0 +1,64 @@
+#include <stdio.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+int main()
+{
+key_t key;
+int shmid;
+int *matrix_buf;
+int i;
+key = ftok("matrix", 65);
+if (key == -1) { perror("ftok"); return 1; }
+// Allocate space for 8 integers total (Matrix A: 0-3, Matrix B: 4-7)
+shmid = shmget(key, 8 * sizeof(int), 0666 | IPC_CREAT);
+if (shmid == -1) { perror("shmget"); return 1; }
+matrix_buf = (int *)shmat(shmid, NULL, 0);
+if (matrix_buf == (int *)-1) { perror("shmat"); return 1; }
+printf("Enter 2x2 Matrix A (4 integers sequentially):\n");
+for( i = 0; i < 4; i++) {
+scanf("%d", &matrix_buf[i]);
+}
+printf("Enter 2x2 Matrix B (4 integers sequentially):\n");
+for( i = 0; i < 4; i++) {
+scanf("%d", &matrix_buf[i + 4]);
+}
+printf("Both matrices stored sequentially and sent to P2.\n");
+shmdt(matrix_buf);
+return 0;
+}
+//consumer.c#include <stdio.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+int main()
+{
+key_t key;
+int shmid;
+int *matrix_buf; [1]
+key = ftok("matrix", 65);
+if (key == -1) { perror("ftok"); return 1; }
+shmid = shmget(key, 8 * sizeof(int), 0666);
+if (shmid == -1) { perror("shmget"); return 1; }
+matrix_buf = (int *)shmat(shmid, NULL, 0);
+if (matrix_buf == (int *)-1) { perror("shmat"); return 1; }
+printf("\nMatrix A received:\n");
+for(int i = 0; i < 4; i++) {
+printf("%d ", matrix_buf[i]);
+if(i == 1) printf("\n");
+}
+printf("\n\nMatrix B received:\n");
+for(int i = 0; i < 4; i++) {
+printf("%d ", matrix_buf[i + 4]);
+if(i == 1) printf("\n");
+}
+printf("\n\nResultant Matrix Sum (1D Compute):\n");
+for(int i = 0; i < 4; i++) {
+int sum = matrix_buf[i] + matrix_buf[i + 4];
+printf("%d ", sum);
+if(i == 1) printf("\n");
+}
+printf("\n"); [1]
+shmdt(matrix_buf);
+shmctl(shmid, IPC_RMID, NULL); // Free memory resource
+return 0;
+}
+
