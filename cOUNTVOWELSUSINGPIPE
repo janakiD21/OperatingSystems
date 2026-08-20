@@ -1,0 +1,73 @@
+
+#include <stdio.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <string.h>
+int main()
+{
+key_t key;
+int shmid;
+char *str;
+key = ftok("shmfile", 65);
+if (key == -1) {
+perror("ftok failed");
+return 1;
+}
+shmid = shmget(key, 1024, 0666 | IPC_CREAT);
+if (shmid == -1) {
+perror("shmget failed");
+return 1;
+}
+str = (char *)shmat(shmid, NULL, 0);
+if (str == (char *)-1) {
+perror("shmat failed");
+return 1;
+}
+printf("Enter a string: ");
+if (fgets(str, 1024, stdin) != NULL) {
+// Strip trailing newline character if present to prevent parsing errors
+str[strcspn(str, "\n")] = '\0';
+}
+printf("String written to shared memory.\n");
+shmdt(str);
+return 0;
+}
+//consumer.c
+#include <sys/ipc.h>
+#include <sys/shm.h>
+int main()
+{
+key_t key;
+int shmid;
+char *str;
+int i;
+key = ftok("shmfile", 65);
+if (key == -1) {
+perror("ftok failed");
+return 1;
+}
+shmid = shmget(key, 1024, 0666);
+if (shmid == -1) {
+perror("shmget failed. Is producer running?");
+return 1;
+}
+str = (char *)shmat(shmid, NULL, 0);
+if (str == (char *)-1) {
+perror("shmat failed");
+return 1;
+}
+printf("Vowels are: ");
+for(i = 0; str[i] != '\0'; i++)
+{
+if(str[i] == 'a' || str[i] == 'e' || str[i] == 'i' || str[i] == 'o' || str[i] == 'u' ||
+str[i] == 'A' || str[i] == 'E' || str[i] == 'I' || str[i] == 'O' || str[i] == 'U')
+{
+printf("%c ", str[i]);
+}
+}
+printf("\n"); 
+shmdt(str);
+shmctl(shmid, IPC_RMID, NULL); // Structural cleanup of memory block
+return 0;
+}
+
