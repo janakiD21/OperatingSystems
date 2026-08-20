@@ -1,0 +1,76 @@
+#include <stdio.h>
+#include<stdlib.h>
+#include<sys/types.h>
+#include<unistd.h>
+#include<sys/wait.h>
+int main(){
+    pid_t P2,P3,P4,P5,P6,P7;
+    printf("Parent process P1 PID=%d\n",getpid());
+    P2=fork();
+    if(P2<0){
+        perror("forkfailed");
+    }
+    else if(P2==0){
+        printf("P2:child of P1\t PID=%d\t ParentId=%d\n",getpid(),getppid());
+        P4=fork();
+        if(P4<0)
+        {
+            perror("fork P3 failed");
+        }
+        else if(P4==0)
+        {
+            printf("P4:child of P2 \tPID=%d \t ParentId=%d\n",getpid(),getppid());
+            P7=fork();
+            if(P7<0){
+                perror("P7 fork failed");
+            }
+            else if(P7==0)
+            {
+                printf("P7:child of P4\t PID=%d \t ParentID=%d\n",getpid(),getppid());
+            }
+            else{
+                wait(NULL);
+                return 0;
+            }
+        }   
+        else{
+            wait(NULL);
+          
+            P3=fork();
+            if(P3<0){
+                perror("P3 fork failed");
+            }
+            else if(P3==0){
+                printf("P3:child of P1 \t PID=%d \t ParentId=%d\n",getpid(),getppid());
+                P5=fork();
+                if(P5<0){
+                    perror("P5 fork failed");
+                }
+                else if(P5==0){
+                    printf("P5:child of P3\t PID=%d \t ParentId=%d\n",getpid(),getppid());
+                }
+                else{
+                    wait(NULL);
+                    P6=fork();
+                    if(P6<0){
+                        perror("P7 fork failed");
+                    }
+                    else if(P6==0){
+                        printf("P6:child of P3 \t PID=%d \t ParentId=%d\n",getpid(),getppid());
+                    }
+                    else{
+                        wait(NULL);
+                        return 0;
+                    }
+		}
+	    }
+                    else{
+                        wait(NULL);
+                        return 0;
+                    }
+                }
+            }
+            
+            
+            
+        }
