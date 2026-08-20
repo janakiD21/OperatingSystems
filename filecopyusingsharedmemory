@@ -1,0 +1,71 @@
+producer.c
+#include <stdio.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+struct message {
+long type;
+char text[500];
+};
+int main()
+{
+key_t key;
+int msgid;
+FILE *fp;
+struct message msg;
+int ch, i = 0; [1]
+key = ftok("filemsg", 65);
+if (key == -1) { perror("ftok"); return 1; }
+msgid = msgget(key, 0666 | IPC_CREAT);
+if (msgid == -1) { perror("msgget"); return 1; }
+fp = fopen("input.txt", "r");
+if(fp == NULL) {
+printf("Error: input.txt not found in this folder.\n");
+return 1;
+} [1, 2]
+while((ch = fgetc(fp)) != EOF && i < 499) {
+msg.text[i++] = ch;
+}
+msg.text[i] = '\0';
+msg.type = 1;
+fclose(fp);
+if (msgsnd(msgid, &msg, sizeof(msg.text), 0) == -1) {
+perror("msgsnd failed");
+return 1;
+}
+printf("File content sent successfully.\n");
+return 0;
+} [1]
+consumer.c#include <stdio.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+struct message {
+long type;
+char text[500];
+};
+int main()
+{
+key_t key;
+int msgid;
+FILE *fp;
+struct message msg; [1]
+key = ftok("filemsg", 65);
+if (key == -1) { perror("ftok"); return 1; }
+msgid = msgget(key, 0666 | IPC_CREAT);
+if (msgid == -1) { perror("msgget"); return 1; }
+if (msgrcv(msgid, &msg, sizeof(msg.text), 1, 0) == -1) {
+perror("msgrcv failed");
+return 1;
+}
+fp = fopen("filecopy.txt", "w");
+if(fp == NULL) {
+printf("Cannot create output file.\n");
+return 1;
+} [1]
+fprintf(fp, "%s", msg.text);
+fclose(fp);
+printf("File copied successfully to filecopy.txt\n");
+msgctl(msgid, IPC_RMID, NULL);
+return 0;
+}
+
+
